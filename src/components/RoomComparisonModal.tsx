@@ -13,6 +13,9 @@ interface RoomComparisonModalProps {
         primaryImageUrl: string;
         roomOptions: {
             type: string;
+            bedConfig?: string;
+            sizeSqft?: number;
+            maxGuests?: number;
             prices: {
                 ota: string;
                 totalPrice: number;
@@ -101,7 +104,24 @@ export const RoomComparisonModal = ({ isOpen, onClose, hotel }: RoomComparisonMo
                                             <tr key={idx} className="hover:bg-white/60 transition-colors">
                                                 <td className="px-8 py-8">
                                                     <span className="text-[#4a044e] font-black text-lg block">{room.type}</span>
-                                                    <span className="text-neutral-500 text-xs font-bold mt-1 block">Includes Taxes & Fees</span>
+                                                    <div className="flex flex-wrap gap-2 mt-2">
+                                                        {room.bedConfig && (
+                                                            <span className="px-2 py-0.5 rounded-md bg-[#4a044e]/5 text-[#4a044e] text-[10px] font-bold uppercase tracking-wide border border-[#4a044e]/10">
+                                                                {room.bedConfig}
+                                                            </span>
+                                                        )}
+                                                        {room.sizeSqft && (
+                                                            <span className="px-2 py-0.5 rounded-md bg-[#4a044e]/5 text-[#4a044e] text-[10px] font-bold uppercase tracking-wide border border-[#4a044e]/10">
+                                                                {room.sizeSqft} sqft
+                                                            </span>
+                                                        )}
+                                                        {room.maxGuests && (
+                                                            <span className="px-2 py-0.5 rounded-md bg-[#4a044e]/5 text-[#4a044e] text-[10px] font-bold uppercase tracking-wide border border-[#4a044e]/10">
+                                                                Up to {room.maxGuests} Guests
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-neutral-500 text-xs font-bold mt-2 block">Includes Taxes & Fees</span>
                                                 </td>
                                                 {otas.map(ota => {
                                                     const priceData = room.prices.find(p => p.ota === ota);

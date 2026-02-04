@@ -58,13 +58,16 @@ export async function GET() {
 
             // Transform rooms
             roomOptions: hotel.roomTypes.map(rt => ({
+                id: rt.id,
                 type: rt.canonicalName,
+                bedConfig: rt.bedConfiguration,
+                sizeSqft: rt.roomSizeSqft,
+                maxGuests: rt.maxGuests,
                 prices: rt.rates.map(rate => ({
                     ota: rate.otaName,
                     totalPrice: Number(rate.basePrice),
                     currency: rate.currency,
                     deepLink: rate.bookingUrl,
-                    // roomType alias if needed
                 }))
             }))
         }))

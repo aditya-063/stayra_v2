@@ -1,14 +1,8 @@
-
 const { PrismaClient } = require('@prisma/client')
-const { config } = require('dotenv')
+let prisma;
+// const { config } = require('dotenv') // removed
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: "file:c:/Users/adity/OneDrive/Desktop/Main Project/Booking_Hotels/frontend/prisma/dev.db"
-        }
-    }
-})
+// const prisma = new PrismaClient(...) // Moved inside main
 
 const mockHotels = [
     {
@@ -120,15 +114,49 @@ const mockHotels = [
 
 async function main() {
     console.log('Seeding database...')
+    require('dotenv').config()
 
-    // Clean up existing data
+    // Explicitly set absolute path to avoid relative path confusion
+    // Hardcode correct relative path given CWD is frontend
+    process.env.DATABASE_URL = "file:./prisma/dev.db"
+    console.log('Using DB URL:', process.env.DATABASE_URL)
+
+    prisma = new PrismaClient()
+
+
+    // Disconnect and reconnect with new env if needed (client usually picks up env at init, so we might need to re-init if we want to force it, but top-level init happened before this... wait!)
+    // If we init at top level, it reads env vars THEN.
+    // So we must init AFTER setting env var if we change it!
+    // But we moved init to top level to fix ReferenceError.
+
+    // Solution: Init inside main, but let catch block handle it by declaring var outside.
+
+
+    // Clean up existing data - Order matters for FK constraints!
     await prisma.otaRoomAlias.deleteMany()
     await prisma.roomRate.deleteMany()
     await prisma.roomType.deleteMany()
     await prisma.hotelImage.deleteMany()
     await prisma.hotelAmenity.deleteMany()
     await prisma.amenityMaster.deleteMany()
+    await prisma.otaHotel.deleteMany()
+    await prisma.otaPayload.deleteMany()
     await prisma.hotel.deleteMany()
+
+    // 1. Seed Layer 1: OTA Payloads (Mocking raw ingestion)
+    console.log('Seeding Layer 1: RAW Payloads...')
+    await prisma.otaPayload.create({
+        data: {
+            otaName: 'booking_com',
+            endpoint: 'https://api.booking.com/hotels/get',
+            requestSignature: 'h892348923498hash',
+            response: JSON.stringify({ hotel_id: '12345', name: 'Royal Atlantis', price: 45000 }), // Mock JSON
+            fetchedAt: new Date()
+        }
+    })
+
+    // 2. Seed Layer 2: Canonical Data
+    console.log('Seeding Layer 2: Canonical Data...')
 
     // Create Amenities Master
     const uniqueAmenities = Array.from(new Set(mockHotels.flatMap(h => h.amenities)))
@@ -158,7 +186,17 @@ async function main() {
                 primaryImageUrl: hotelData.primaryImageUrl,
                 reviewScore: hotelData.reviewScore,
                 reviewCount: hotelData.reviewCount,
+                qualityScore: 95, // High confidence
             }
+        })
+
+        // 2a. Link OTA Hotel IDs (Mapping Layer)
+        await prisma.otaHotel.createMany({
+            data: [
+                { hotelId: hotel.id, otaName: 'booking.com', otaHotelId: `bkg_${Math.floor(Math.random() * 10000)}`, matchConfidence: 0.99 },
+                { hotelId: hotel.id, otaName: 'agoda', otaHotelId: `ago_${Math.floor(Math.random() * 10000)}`, matchConfidence: 0.98 },
+                { hotelId: hotel.id, otaName: 'expedia', otaHotelId: `exp_${Math.floor(Math.random() * 10000)}`, matchConfidence: 0.95 }
+            ]
         })
 
         // Link Amenities
@@ -179,16 +217,33 @@ async function main() {
             data: {
                 hotelId: hotel.id,
                 imageUrl: hotelData.primaryImageUrl,
-                isPrimary: true
+                isPrimary: true,
+                displayOrder: 1
             }
         })
 
         // Create Room Types & Rates
         for (const roomData of hotelData.roomOptions) {
+            const isSuite = roomData.type.toLowerCase().includes('suite');
+
             const roomType = await prisma.roomType.create({
                 data: {
                     hotelId: hotel.id,
                     canonicalName: roomData.type,
+                    roomClass: isSuite ? 'Suite' : 'Standard',
+                    maxGuests: isSuite ? 4 : 2,
+                    bedConfiguration: isSuite ? '1 King Bed' : '1 Queen Bed',
+                    roomSizeSqft: isSuite ? 850 : 450,
+                }
+            })
+
+            // 2b. Create OTA Room Aliases
+            await prisma.otaRoomAlias.create({
+                data: {
+                    roomTypeId: roomType.id,
+                    otaName: 'booking.com',
+                    otaRoomName: `Dlx Room ${Math.floor(Math.random() * 100)}`, // Simulate weird OTA name
+                    confidenceScore: 0.9
                 }
             })
 
@@ -201,14 +256,16 @@ async function main() {
                         checkout: new Date(Date.now() + 86400000), // Mock date + 1 day
                         basePrice: price.totalPrice,
                         currency: price.currency,
-                        bookingUrl: price.deepLink
+                        bookingUrl: price.deepLink,
+                        refundable: true,
+                        availability: 5
                     }
                 })
             }
         }
     }
 
-    console.log('Seeding finished.')
+    console.log('Seeding finished with AUTH SCHEMA compliance.')
 }
 
 main()
@@ -217,6 +274,9 @@ main()
     })
     .catch(async (e) => {
         console.error(e)
+        // Write error to file for agent to read
+        const fs = require('fs');
+        fs.writeFileSync('seed_error.log', e.toString() + '\\n' + (e.stack || ''));
         await prisma.$disconnect()
         process.exit(1)
     })

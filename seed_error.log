@@ -1,0 +1,22 @@
+PrismaClientKnownRequestError: 
+Invalid `prisma.otaHotel.createMany()` invocation in
+C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:31
+
+  191 })
+  192 
+  193 // 2a. Link OTA Hotel IDs (Mapping Layer)
+→ 194 await prisma.otaHotel.createMany(
+Null constraint violation on the fields: (`id`)\nPrismaClientKnownRequestError: 
+Invalid `prisma.otaHotel.createMany()` invocation in
+C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:31
+
+  191 })
+  192 
+  193 // 2a. Link OTA Hotel IDs (Mapping Layer)
+→ 194 await prisma.otaHotel.createMany(
+Null constraint violation on the fields: (`id`)
+    at $n.handleRequestError (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async main (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:9)
