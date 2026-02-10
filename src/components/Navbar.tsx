@@ -11,7 +11,7 @@ interface UserData {
     email: string;
 }
 
-export const Navbar = () => {
+const NavbarComponent = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { scrollY } = useScroll();
@@ -25,8 +25,15 @@ export const Navbar = () => {
     const hideNavbar = pathname === '/login' || pathname === '/signup' || pathname === '/login/otp' || pathname?.startsWith('/search');
 
     useEffect(() => {
+        let lastUpdate = 0;
+        const throttleDelay = 100; // Update every 100ms max
+
         return scrollY.onChange((latest) => {
-            setIsScrolled(latest > 50);
+            const now = Date.now();
+            if (now - lastUpdate >= throttleDelay) {
+                setIsScrolled(latest > 50);
+                lastUpdate = now;
+            }
         });
     }, [scrollY]);
 
@@ -183,19 +190,12 @@ export const Navbar = () => {
                                             style={{ perspective: '1000px' }}
                                         >
                                             <div
-                                                className="relative rounded-[1.5rem] overflow-hidden p-5"
+                                                className="relative rounded-[1.5rem] overflow-hidden p-5 bg-white border border-neutral-100"
                                                 style={{
-                                                    background: '#ffffff',
                                                     boxShadow: `
-                                                        0 20px 40px -10px rgba(0, 0, 0, 0.25),
-                                                        0 -8px 24px -4px rgba(0, 0, 0, 0.1),
-                                                        15px 0 30px -10px rgba(0, 0, 0, 0.15),
-                                                        -15px 0 30px -10px rgba(0, 0, 0, 0.15),
-                                                        inset 2px 2px 5px rgba(255, 255, 255, 0.5),
-                                                        inset -2px -2px 5px rgba(0, 0, 0, 0.05)
+                                                        0 20px 40px -10px rgba(0, 0, 0, 0.2),
+                                                        0 8px 16px -4px rgba(0, 0, 0, 0.1)
                                                     `,
-                                                    transform: 'translateZ(20px)',
-                                                    border: '1px solid rgba(255, 255, 255, 0.6)',
                                                 }}
                                             >
                                                 {/* Top Gradient Strip */}
@@ -291,3 +291,5 @@ export const Navbar = () => {
         </motion.nav>
     );
 };
+
+export const Navbar = React.memo(NavbarComponent);

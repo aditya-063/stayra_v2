@@ -43,7 +43,12 @@ export async function sendOTPSMS(mobile: string, otp: string): Promise<boolean> 
  */
 export async function sendPasswordResetSMS(mobile: string, token: string): Promise<boolean> {
     try {
-        const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+        if (!appUrl) {
+            console.error('NEXT_PUBLIC_APP_URL environment variable is required for password reset SMS');
+            return false;
+        }
+        const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
         console.log(`📱 SMS Password Reset to ${mobile}`);
         console.log(`Reset URL: ${resetUrl}`);

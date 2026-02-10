@@ -1,40 +1,102 @@
-# Zero-Cost Deployment Guide (Vercel)
+# Stayra Deployment & Release Workflow
 
-You can put this application live **right now for free** using Vercel.
+This document outlines the standard deployment and release process for the Stayra application.
 
-Because we built a smart **Mock Data Fallback**, we don't even need to set up a complex database for the first demo. The app will automatically detect it can't reach the database and show your beautiful "The Royal Atlantis" mock data instead.
+## 🚀 Branch Strategy
 
-## Step 1: Push to GitHub
-If you haven't already, push your code to a GitHub repository:
-1.  Initialize git: `git init`
-2.  Add files: `git add .`
-3.  Commit: `git commit -m "Ready for deploy"`
-4.  Push to your GitHub repo (create one at [github.new](https://github.new) if needed).
+We follow a simplified GitFlow strategy:
 
-## Step 2: Deploy to Vercel
-1.  Go to [vercel.com](https://vercel.com) and Sign Up (Free).
-2.  Click **"Add New..."** -> **"Project"**.
-3.  Import your GitHub repository.
-4.  **Framework Preset**: It should auto-detect "Next.js".
-5.  **Environment Variables**: 
-    -   You can skip this! 
-    -   Since we are using the "Demo Mode" (Mock Data), we don't need `DATABASE_URL`.
-6.  Click **"Deploy"**.
+| Branch   | Environment | URL                | Purpose                                      |
+|----------|-------------|--------------------|----------------------------------------------|
+| `main`   | Production  | https://stayra.com | Stable, user-facing code                     |
+| `dev`    | Preview     | https://dev.stayra.vercel.app | Integration testing, feature verification    |
+| `feature/*`| Local     | localhost:3000     | Active development                           |
 
-## Step 3: Success!
--   Vercel will build your site (takes ~1 minute).
--   Once done, you will get a live URL (e.g., `stayra-app.vercel.app`).
--   Share it with anyone!
+### Workflow Steps
+
+1. **Development**: Create a feature branch from `dev`.
+   ```bash
+   git checkout -b feature/my-new-feature
+   ```
+
+2. **Pull Request**: Open a PR to `dev`.
+   - Vercel automatically deploys a preview URL.
+   - Run sanity checks on the preview URL.
+
+3. **Merge to Dev**: Squash and merge to `dev`.
+   - Automatically deploys to the designated Preview environment.
+
+4. **Production Release**: 
+   - Open a PR from `dev` to `main`.
+   - Use the release title pattern: `Release vX.Y.Z - [Description]`.
+   - Merge to `main` triggers production deployment.
 
 ---
 
-## (Optional) Advanced: Enabling Real Auth
-If you want the "Login" feature to actually save users, you need a free Postgres database.
-1.  On Vercel, go to **Storage** tab.
-2.  Click **Create Database** -> Select **Postgres (Serverless)**.
-3.  Accept the defaults (Region: US East usually fine).
-4.  Go to **Settings** -> **Environment Variables**.
-5.  It should auto-populate `POSTGRES_URL` etc.
-6.  You would need to update `schema.prisma` to use `provider = "postgresql"` and re-deploy.
+## 🛠️ Environment Configuration
 
-**Recommendation:** Stick to **Step 1 & 2** for today. It's free, instant, and "Stayra" looks perfect in demo mode.
+Ensure the following environment variables are set in Vercel project settings:
+
+### Production Environment
+- `NODE_ENV`: `production`
+- `DATABASE_URL`: Production PostgreSQL connection string (Supabase/Neon)
+- `NEXT_PUBLIC_APP_URL`: `https://stayra.com`
+- `NEXTAUTH_URL`: `https://stayra.com`
+- `JWT_SECRET`: Production-grade random string (min 32 chars)
+- `NEXTAUTH_SECRET`: Production-grade random string (min 32 chars)
+- `POSTHOG_API_KEY`: Production project key
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Production OAuth credentials
+
+### Preview Environment
+- `NODE_ENV`: `production` (builds as production)
+- `DATABASE_URL`: Preview/Staging PostgreSQL connection string
+- `NEXT_PUBLIC_APP_URL`: Vercel system var (`https://$VERCEL_URL`)
+- `NEXTAUTH_URL`: Vercel system var (`https://$VERCEL_URL`)
+
+---
+
+## ✅ Pre-Deployment Checklist
+
+Before merging to `main`:
+
+1. **Database Migrations**
+   - Check if `prisma/migrations` contains new migrations.
+   - Run `npx prisma migrate status` to verify sync.
+
+2. **API Contract Check**
+   - Ensure specific `src/types/api.ts` contracts are respected.
+   - Verify no breaking changes to `/api/hotels/[id]/offers` or `/api/click`.
+
+3. **Build Verification**
+   - Run `npm run build` locally to catch type errors.
+   - Run `npm run lint` to catch code issues.
+
+---
+
+## 🚨 Rollback Procedure
+
+If a production deployment fails or introduces a critical bug:
+
+1. **Instant Rollback (Vercel)**
+   - Go to Vercel Dashboard > Deployments.
+   - Find the last known good deployment (green checkmark).
+   - Click "Redeploy" or "Promote to Production".
+   - This takes < 1 minute.
+
+2. **Database Rollback**
+   - If a migration caused data issues:
+   - Connect to DB and revert schema changes manually or via `prisma migrate resolve`.
+   - *Note: Down migrations are not natively supported by Prisma, always backup before major schema changes.*
+
+3. **Code Revert**
+   - Revert the merge commit on `main`.
+   - Push to `main` to trigger a new deployment.
+
+---
+
+## 🔒 Security Best Practices
+
+- **Never commit `.env` files.**
+- **Rotate secrets** (JWT, OAuth) periodically.
+- **Review dependency updates** (`npm audit`) before releases.
+- **Sanitize logs** - ensure no PII or secrets are logged to Vercel logs.

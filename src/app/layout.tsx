@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { GoldSprinkles } from "@/components/GoldSprinkles";
 import { AuthProvider } from "@/components/AuthProvider";
+import { Footer } from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +55,7 @@ export default function RootLayout({
             <GoldSprinkles />
           </div>
           {children}
+          <Footer />
         </AuthProvider>
       </body>
     </html>

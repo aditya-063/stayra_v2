@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
 import { FlowingWaveBackground } from "@/components/FlowingWaveBackground";
 import { SearchBar } from "@/components/SearchBar";
@@ -9,7 +9,7 @@ import { RoomComparisonModal } from "@/components/RoomComparisonModal";
 import { mockHotels } from "@/lib/mockData";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Home() {
+function Home() {
   const [selectedHotel, setSelectedHotel] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>(mockHotels);
   const [allHotels, setAllHotels] = useState<any[]>(mockHotels);
@@ -33,7 +33,7 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const handleSearch = (data: any) => {
+  const handleSearch = useCallback((data: any) => {
     setLoading(true);
     // Simulate API latency for effect only, filtering is now client-side on fetched data
     // Real app would pass params to API
@@ -57,8 +57,8 @@ export default function Home() {
 
       setSearchResults(filtered);
       setLoading(false);
-    }, 600);
-  };
+    }, 400);
+  }, [allHotels]);
 
   return (
     <main className="min-h-screen relative pb-32 bg-gradient-to-br from-amber-50/30 via-yellow-50/30 to-orange-50/30">
@@ -139,9 +139,9 @@ export default function Home() {
                 searchResults.map((hotel, idx) => (
                   <motion.div
                     key={hotel.id}
-                    initial={{ opacity: 0, y: 50 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1, duration: 0.5, ease: "backOut" }}
+                    transition={{ delay: idx * 0.05, duration: 0.3, ease: "easeOut" }}
                   >
                     <HotelCard
                       hotel={hotel}
@@ -172,3 +172,5 @@ export default function Home() {
     </main>
   );
 }
+
+export default React.memo(Home);

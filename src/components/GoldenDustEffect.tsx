@@ -13,8 +13,8 @@ export const GoldenDustEffect = ({ show = true, onComplete }: GoldenDustEffectPr
 
     useEffect(() => {
         if (show) {
-            // Create golden dust particles
-            const count = 50;
+            // Create golden dust particles - Optimized for performance
+            const count = 30;
             const newParticles = Array.from({ length: count }).map((_, i) => ({
                 id: i,
                 x: 50 + (Math.random() - 0.5) * 30, // Center burst effect

@@ -53,39 +53,43 @@ export function FlowingWaveBackground() {
                     </motion.div>
                 ))}
 
-                {/* Golden Particle Sprinkles - Increased Density */}
-                {Array.from({ length: 500 }).map((_, i) => (
-                    <motion.div
-                        key={`particle-${i}`}
-                        className="absolute rounded-full"
-                        style={{
-                            width: `${2 + Math.random() * 4}px`,
-                            height: `${2 + Math.random() * 4}px`,
-                            left: `${Math.random() * 100}%`,
-                            top: `${15 + Math.random() * 70}%`,
-                            background: `radial-gradient(circle, ${i % 4 === 0 ? '#fbbf24' : i % 4 === 1 ? '#f59e0b' : i % 4 === 2 ? '#fcd34d' : '#fb923c'
-                                }, transparent)`,
-                            boxShadow: `0 0 ${12 + Math.random() * 16}px ${i % 4 === 0 ? 'rgba(251, 191, 36, 0.9)' :
-                                i % 4 === 1 ? 'rgba(245, 158, 11, 0.9)' :
-                                    i % 4 === 2 ? 'rgba(252, 211, 77, 0.9)' :
-                                        'rgba(251, 146, 60, 0.9)'
-                                }`,
-                            zIndex: 2,
-                        }}
-                        animate={{
-                            x: [0, -25 + Math.random() * 50],
-                            y: [0, -35 + Math.random() * 70],
-                            opacity: [0, 0.9, 0.7, 0],
-                            scale: [0.5, 2.5 + Math.random() * 1.5, 1, 0.5],
-                        }}
-                        transition={{
-                            duration: 3.5 + Math.random() * 3.5,
-                            repeat: Infinity,
-                            delay: Math.random() * 5,
-                            ease: 'easeInOut',
-                        }}
-                    />
-                ))}
+                {/* Golden Particle Sprinkles - Optimized for Performance */}
+                {Array.from({ length: 100 }).map((_, i) => {
+                    const colorIndex = i % 4;
+                    const color = colorIndex === 0 ? '#fbbf24' : colorIndex === 1 ? '#f59e0b' : colorIndex === 2 ? '#fcd34d' : '#fb923c';
+                    const shadowColor = colorIndex === 0 ? 'rgba(251, 191, 36, 0.6)' :
+                        colorIndex === 1 ? 'rgba(245, 158, 11, 0.6)' :
+                            colorIndex === 2 ? 'rgba(252, 211, 77, 0.6)' :
+                                'rgba(251, 146, 60, 0.6)';
+
+                    return (
+                        <motion.div
+                            key={`particle-${i}`}
+                            className="absolute rounded-full will-change-transform"
+                            style={{
+                                width: `${2 + Math.random() * 4}px`,
+                                height: `${2 + Math.random() * 4}px`,
+                                left: `${Math.random() * 100}%`,
+                                top: `${15 + Math.random() * 70}%`,
+                                background: color,
+                                boxShadow: `0 0 ${12 + Math.random() * 8}px ${shadowColor}`,
+                                zIndex: 2,
+                            }}
+                            animate={{
+                                x: [0, -25 + Math.random() * 50],
+                                y: [0, -35 + Math.random() * 70],
+                                opacity: [0, 0.8, 0.6, 0],
+                                scale: [0.5, 2 + Math.random() * 1, 1, 0.5],
+                            }}
+                            transition={{
+                                duration: 3.5 + Math.random() * 3,
+                                repeat: Infinity,
+                                delay: Math.random() * 5,
+                                ease: 'linear',
+                            }}
+                        />
+                    );
+                })}
             </div>
         </>
     );

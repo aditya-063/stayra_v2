@@ -1,22 +1,36 @@
-PrismaClientKnownRequestError: 
-Invalid `prisma.otaHotel.createMany()` invocation in
-C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:31
+PrismaClientInitializationError: 
+Invalid `prisma.otaRoomAlias.deleteMany()` invocation in
+C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:136:31
 
-  191 })
-  192 
-  193 // 2a. Link OTA Hotel IDs (Mapping Layer)
-→ 194 await prisma.otaHotel.createMany(
-Null constraint violation on the fields: (`id`)\nPrismaClientKnownRequestError: 
-Invalid `prisma.otaHotel.createMany()` invocation in
-C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:31
+  133 
+  134 
+  135 // Clean up existing data - Order matters for FK constraints!
+→ 136 await prisma.otaRoomAlias.deleteMany(
+error: Error validating datasource `db`: the URL must start with the protocol `postgresql://` or `postgres://`.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
 
-  191 })
-  192 
-  193 // 2a. Link OTA Hotel IDs (Mapping Layer)
-→ 194 await prisma.otaHotel.createMany(
-Null constraint violation on the fields: (`id`)
-    at $n.handleRequestError (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:7315)
+Validation Error Count: 1\nPrismaClientInitializationError: 
+Invalid `prisma.otaRoomAlias.deleteMany()` invocation in
+C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:136:31
+
+  133 
+  134 
+  135 // Clean up existing data - Order matters for FK constraints!
+→ 136 await prisma.otaRoomAlias.deleteMany(
+error: Error validating datasource `db`: the URL must start with the protocol `postgresql://` or `postgres://`.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at $n.handleRequestError (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:7615)
     at $n.handleAndLogRequestError (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:6623)
     at $n.request (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:121:6307)
     at async l (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\node_modules\@prisma\client\runtime\library.js:130:9633)
-    at async main (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:194:9)
+    at async main (C:\Users\adity\OneDrive\Desktop\Main Project\Booking_Hotels\frontend\prisma\seed.js:136:5)

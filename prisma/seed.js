@@ -118,7 +118,7 @@ async function main() {
 
     // Explicitly set absolute path to avoid relative path confusion
     // Hardcode correct relative path given CWD is frontend
-    process.env.DATABASE_URL = "file:./prisma/dev.db"
+    // process.env.DATABASE_URL = "file:./prisma/dev.db"  <-- REMOVED to use PostgreSQL
     console.log('Using DB URL:', process.env.DATABASE_URL)
 
     prisma = new PrismaClient()

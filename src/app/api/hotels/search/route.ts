@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../../../lib/prisma';
+import { trackSearch } from '@/lib/analytics';
+import type { SearchResponse, SearchHotel, SearchOffer, APIError } from '@/types/api';
 
 export const dynamic = 'force-dynamic';
 
-interface SearchParams {
-    city?: string;
-    checkin?: string;
-    checkout?: string;
-    guests?: string;
-}
-
+/**
+ * GET /api/hotels/search
+ * Search hotels by city and dates
+ * 
+ * ⚠️ FROZEN API CONTRACT - Do not change response shape without UI team coordination
+ * 
+ * @param city - Required city name
+ * @param checkin - Optional check-in date (ISO)
+ * @param checkout - Optional check-out date (ISO)
+ * @param guests - Optional guest count (default: 2)
+ * @returns SearchResponse with hotels array
+ */
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -21,10 +26,11 @@ export async function GET(request: Request) {
         const guests = parseInt(searchParams.get('guests') || '2');
 
         if (!city) {
-            return NextResponse.json(
-                { error: 'City parameter is required' },
-                { status: 400 }
-            );
+            const error: APIError = {
+                error: 'City parameter is required',
+                code: 'MISSING_CITY'
+            };
+            return NextResponse.json(error, { status: 400 });
         }
 
         // Parse dates
@@ -32,6 +38,13 @@ export async function GET(request: Request) {
         const checkoutDate = checkout
             ? new Date(checkout)
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // +3 days
+
+        // Fetch active partners for display names
+        const partners = await prisma.partner.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true, slug: true }
+        });
+        const partnerMap = new Map(partners.map(p => [p.slug, p.name]));
 
         // Search hotels in the city
         const hotels = await prisma.hotel.findMany({
@@ -62,16 +75,16 @@ export async function GET(request: Request) {
         });
 
         // Format response
-        const results = hotels.map((hotel) => {
+        const results: SearchHotel[] = hotels.map((hotel) => {
             const allRates = hotel.roomTypes.flatMap((rt) => rt.rates);
 
             // Group rates by partner
-            const offersByPartner: Record<string, any> = {};
+            const offersByPartner: Record<string, SearchOffer> = {};
             allRates.forEach((rate) => {
                 if (!offersByPartner[rate.otaName] || rate.basePrice < offersByPartner[rate.otaName].price) {
                     offersByPartner[rate.otaName] = {
                         partner: rate.otaName,
-                        partnerName: getPartnerDisplayName(rate.otaName),
+                        partnerName: partnerMap.get(rate.otaName) || rate.otaName,
                         roomType: 'Deluxe King Room',
                         price: Number(rate.basePrice),
                         currency: rate.currency,
@@ -110,7 +123,7 @@ export async function GET(request: Request) {
                         partner: lowestOffer.partner,
                     }
                     : null,
-                offers: offers.sort((a, b) => a.price - b.price), // Sort by price low to high
+                offers: offers.sort((a, b) => a.price - b.price),
             };
         });
 
@@ -121,7 +134,17 @@ export async function GET(request: Request) {
             return a.lowestPrice.amount - b.lowestPrice.amount;
         });
 
-        return NextResponse.json({
+        // Track search analytics (fire and forget)
+        trackSearch({
+            city,
+            checkin: checkinDate.toISOString().split('T')[0],
+            checkout: checkoutDate.toISOString().split('T')[0],
+            guests,
+            resultCount: results.length
+        }).catch(() => { /* ignore analytics errors */ });
+
+        // ⚠️ Do not change response shape – UI contract
+        const response: SearchResponse = {
             searchId: `s_${Date.now()}`,
             city,
             checkin: checkinDate.toISOString().split('T')[0],
@@ -129,22 +152,15 @@ export async function GET(request: Request) {
             guests,
             count: results.length,
             hotels: results,
-        });
-    } catch (error) {
-        console.error('Hotel search error:', error);
-        return NextResponse.json(
-            { error: 'Failed to search hotels' },
-            { status: 500 }
-        );
-    }
-}
+        };
 
-function getPartnerDisplayName(partnerId: string): string {
-    const names: Record<string, string> = {
-        booking: 'Booking.com',
-        agoda: 'Agoda',
-        expedia: 'Expedia',
-        hotelscom: 'Hotels.com',
-    };
-    return names[partnerId] || partnerId;
+        return NextResponse.json(response);
+    } catch (error: unknown) {
+        console.error('Hotel search error:', error);
+        const errorResponse: APIError = {
+            error: 'Failed to search hotels',
+            code: 'SEARCH_ERROR'
+        };
+        return NextResponse.json(errorResponse, { status: 500 });
+    }
 }

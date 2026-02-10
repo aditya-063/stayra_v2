@@ -94,7 +94,12 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
     return false;
   }
   try {
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      console.error('NEXT_PUBLIC_APP_URL environment variable is required for password reset emails');
+      return false;
+    }
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: SMTP_FROM,

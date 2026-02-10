@@ -1,16 +1,41 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../../../lib/prisma';
+import { trackHotelView } from '@/lib/analytics';
+import { verifyJWT } from '@/lib/jwt';
+import type { APIError } from '@/types/api';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/hotels/[hotelId]
+ * Fetch distinct hotel details
+ * 
+ * @param hotelId - Hotel UUID
+ */
 export async function GET(
     request: Request,
     { params }: { params: { hotelId: string } }
 ) {
     try {
         const { hotelId } = params;
+
+        // Extract optional userId for analytics
+        let userId: string | undefined;
+        try {
+            const authHeader = request.headers.get('authorization');
+            if (authHeader?.startsWith('Bearer ')) {
+                const token = authHeader.substring(7);
+                const payload = verifyJWT(token);
+                userId = payload.userId as string;
+            }
+        } catch { /* ignore auth errors */ }
+
+        // Fetch active partners for display names
+        const partners = await prisma.partner.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true, slug: true }
+        });
+        const partnerMap = new Map(partners.map(p => [p.slug, p.name]));
 
         const hotel = await prisma.hotel.findUnique({
             where: { id: hotelId },
@@ -35,21 +60,20 @@ export async function GET(
         });
 
         if (!hotel) {
-            return NextResponse.json(
-                { error: 'Hotel not found' },
-                { status: 404 }
-            );
+            const error: APIError = { error: 'Hotel not found', code: 'HOTEL_NOT_FOUND' };
+            return NextResponse.json(error, { status: 404 });
         }
 
         // Aggregate rates by partner
         const allRates = hotel.roomTypes.flatMap((rt) => rt.rates);
         const offersByPartner: Record<string, any> = {};
 
-        allRates.forEach((rate) => {
+        allRates.forEach((rate: any) => {
             if (!offersByPartner[rate.otaName] || rate.basePrice < offersByPartner[rate.otaName].price) {
+                const partnerName = partnerMap.get(rate.otaName) || rate.otaName;
                 offersByPartner[rate.otaName] = {
                     partner: rate.otaName,
-                    partnerName: getPartnerDisplayName(rate.otaName),
+                    partnerName: partnerName,
                     roomType: 'Deluxe King Room',
                     price: Number(rate.basePrice),
                     currency: rate.currency,
@@ -65,7 +89,15 @@ export async function GET(
             }
         });
 
-        const offers = Object.values(offersByPartner).sort((a, b) => a.price - b.price);
+        const offers = Object.values(offersByPartner).sort((a: any, b: any) => a.price - b.price);
+
+        // Track view
+        trackHotelView({
+            hotelId: hotel.id,
+            hotelName: hotel.canonicalName,
+            city: hotel.city,
+            userId
+        }).catch(() => { /* ignore analytics errors */ });
 
         return NextResponse.json({
             hotelId: hotel.id,
@@ -80,11 +112,11 @@ export async function GET(
             description: hotel.description,
             propertyType: hotel.propertyType,
             primaryImage: hotel.primaryImageUrl || '/images/hotel-placeholder.jpg',
-            images: hotel.images.map((img) => ({
+            images: hotel.images.map((img: any) => ({
                 url: img.imageUrl,
                 isPrimary: img.isPrimary,
             })),
-            amenities: hotel.amenities.map((ha) => ha.amenity.name),
+            amenities: hotel.amenities.map((ha: any) => ha.amenity.name),
             offers,
             lowestPrice: offers.length > 0 ? offers[0].price : null,
         });
@@ -95,14 +127,4 @@ export async function GET(
             { status: 500 }
         );
     }
-}
-
-function getPartnerDisplayName(partnerId: string): string {
-    const names: Record<string, string> = {
-        booking: 'Booking.com',
-        agoda: 'Agoda',
-        expedia: 'Expedia',
-        hotelscom: 'Hotels.com',
-    };
-    return names[partnerId] || partnerId;
 }

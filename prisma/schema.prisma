@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -182,13 +182,21 @@ model SearchSnapshot {
 
 model Click {
   id            Int      @id @default(autoincrement())
-  hotelId       String   @map("hotel_id")
-  ota           String
-  affiliateLink String   @map("affiliate_link")
-  ip            String
+  // Phase 2 fields (metasearch tracking)
+  offerId       String?  @map("offer_id")
+  partnerId     String?  @map("partner_id")
+  userId        String?  @map("user_id")
+  // Legacy fields (kept for backward compatibility)
+  hotelId       String?  @map("hotel_id")
+  ota           String?
+  affiliateLink String?  @map("affiliate_link")
+  ip            String?
   device        String?
   createdAt     DateTime @default(now()) @map("created_at")
 
+  @@index([offerId])
+  @@index([partnerId])
+  @@index([userId])
   @@map("clicks")
 }
 
@@ -250,6 +258,7 @@ model Destination {
 model Partner {
   id          String   @id  // 'booking', 'agoda', 'expedia', 'hotelscom'
   name        String   // 'Booking.com', 'Agoda', 'Expedia', 'Hotels.com'
+  slug        String   @unique // URL-friendly: 'booking', 'agoda', etc.
   logo        String?  // Logo URL or icon name
   bookingType String   @map("booking_type") // 'redirect' or 'api'
   baseUrl     String?  @map("base_url") // For affiliate redirects
@@ -257,5 +266,31 @@ model Partner {
   priority    Int      @default(0) // Display order
   createdAt   DateTime @default(now()) @map("created_at")
   
+  offers      Offer[]
+  
   @@map("partners")
+}
+
+// ==========================================================
+// OFFER NORMALIZATION (Read-Only Price Snapshots)
+// ==========================================================
+
+model Offer {
+  id           String   @id @default(uuid())
+  hotelId      String   @map("hotel_id")
+  partnerId    String   @map("partner_id")
+  partner      Partner  @relation(fields: [partnerId], references: [id])
+  roomName     String?  @map("room_name")
+  price        Float
+  currency     String
+  refundable   Boolean
+  cancellation String?
+  deeplink     String
+  fetchedAt    DateTime @map("fetched_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@index([hotelId])
+  @@index([partnerId])
+  @@index([fetchedAt])
+  @@map("offers")
 }

@@ -25,7 +25,7 @@ interface HotelCardProps {
     onSelectRooms: (hotel: any) => void;
 }
 
-export const HotelCard = ({ hotel, onSelectRooms }: HotelCardProps) => {
+const HotelCardComponent = ({ hotel, onSelectRooms }: HotelCardProps) => {
     // Find cheapest price across all room options
     const allPrices = hotel.roomOptions?.flatMap((r: any) => r.prices) || [];
     const cheapestPrice = allPrices.length > 0
@@ -38,21 +38,11 @@ export const HotelCard = ({ hotel, onSelectRooms }: HotelCardProps) => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-50px" }}
             whileHover={{
-                scale: 1.03,
-                y: -10,
-                transition: { duration: 0.4, ease: "easeOut" }
+                scale: 1.02,
+                y: -8,
+                transition: { duration: 0.3, ease: "easeOut" }
             }}
-            style={{
-                perspective: '2000px',
-                transformStyle: 'preserve-3d'
-            }}
-            className="glass-3d glass-3d-collection flex flex-col lg:flex-row h-full group border-none rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-[0_50px_100px_-20px_rgba(74,4,78,0.3),0_30px_60px_-30px_rgba(251,191,36,0.4)] cursor-pointer"
-            onMouseEnter={(e: any) => {
-                e.currentTarget.style.transform = 'translateZ(30px) rotateX(-2deg)';
-            }}
-            onMouseLeave={(e: any) => {
-                e.currentTarget.style.transform = 'translateZ(0px) rotateX(0deg)';
-            }}
+            className="glass-3d glass-3d-collection flex flex-col lg:flex-row h-full group border-none rounded-[2.5rem] overflow-hidden transition-all duration-300 hover:shadow-[0_40px_80px_-20px_rgba(74,4,78,0.25),0_20px_40px_-20px_rgba(251,191,36,0.3)] cursor-pointer will-change-transform"
         >
             {/* Floating Image Section */}
             <div className="lg:w-[45%] relative min-h-[450px] lg:min-h-[550px] p-4 lg:p-6">
@@ -163,7 +153,7 @@ export const HotelCard = ({ hotel, onSelectRooms }: HotelCardProps) => {
 
                     <div className="flex gap-4">
                         <motion.button
-                            whileHover={{ scale: 1.02 }}
+                            whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => onSelectRooms(hotel)}
                             className="flex-1 bg-[#4a044e] text-white py-4 rounded-[1.5rem] flex items-center justify-center gap-3 shadow-lg shadow-[#4a044e]/20 hover:shadow-xl hover:shadow-[#4a044e]/30 transition-all font-black tracking-widest text-sm"
@@ -173,8 +163,8 @@ export const HotelCard = ({ hotel, onSelectRooms }: HotelCardProps) => {
                         </motion.button>
 
                         <motion.button
-                            whileHover={{ scale: 1.02, rotate: 5 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
                             className="aspect-square bg-yellow-400 text-[#4a044e] rounded-[1.5rem] flex items-center justify-center shadow-lg shadow-yellow-400/20 hover:bg-yellow-300 transition-colors"
                         >
                             <Zap className="w-6 h-6 fill-current" />
@@ -185,3 +175,6 @@ export const HotelCard = ({ hotel, onSelectRooms }: HotelCardProps) => {
         </motion.div>
     );
 };
+
+export const HotelCard = React.memo(HotelCardComponent);
+

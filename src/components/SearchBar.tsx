@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, MapPin, Calendar, Users, Zap, Map, Sparkles, ChevronLeft, ChevronRight, Minus, Plus, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ interface SearchBarProps {
     onSearch: (data: any) => void;
 }
 
-export const SearchBar = ({ onSearch }: SearchBarProps) => {
+const SearchBarComponent = ({ onSearch }: SearchBarProps) => {
     const [isFocused, setIsFocused] = useState(false);
     const [query, setQuery] = useState("");
     const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -134,12 +134,12 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         window.location.href = `/search?${params.toString()}`;
     };
 
-    // Calendar Helpers
-    const generateCalendarDays = () => {
+    // Calendar Helpers - Memoized for performance
+    const calendarDays = useMemo(() => {
         const start = startOfWeek(startOfMonth(currentMonth));
         const end = endOfWeek(endOfMonth(currentMonth));
         return eachDayOfInterval({ start, end });
-    };
+    }, [currentMonth]);
 
     const handleDateClick = (day: Date) => {
         if (!dateRange.from || (dateRange.from && dateRange.to)) {
@@ -292,7 +292,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                                     ))}
                                 </div>
                                 <div className="grid grid-cols-7 gap-1">
-                                    {generateCalendarDays().map((day, idx) => {
+                                    {calendarDays.map((day, idx) => {
                                         const isSelected = isSameDay(day, dateRange.from) || (dateRange.to && isSameDay(day, dateRange.to));
                                         const isInRange = dateRange.from && dateRange.to && isWithinInterval(day, { start: dateRange.from, end: dateRange.to });
                                         const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -482,8 +482,8 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
 
                     {/* Search Button */}
                     <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit"
                         className="bg-white text-[#470047] px-8 rounded-[2rem] flex items-center justify-center gap-3 group shadow-xl transition-all duration-300 font-black tracking-widest text-lg lg:w-[140px]"
                     >
@@ -496,3 +496,6 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         </div>
     );
 };
+
+export const SearchBar = React.memo(SearchBarComponent);
+
